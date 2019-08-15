@@ -21,9 +21,11 @@ import sys
 import copy
 import argparse
 import csv
+import json
 from datetime import datetime
 import logging
 from lxml import etree
+from .cvrfdocument import CVRFDocument
 
 __revision__ = "1.2.0"
 
@@ -141,6 +143,10 @@ class CVRFParser:
         self.args = args
 
     def parse(self):
+
+        pass
+
+    def xparse(self):
         cvrf_version = self.args.cvrf_version
         parsables = self.parsables
         progname = self.progname
@@ -849,5 +855,28 @@ def main(progname=None):
 
     parser.add_argument("-v", "--version", action="version", version="%(prog)s " + __revision__)
 
-    cvrf_parser = CVRFParser(parser, progname=progname)
-    cvrf_parser.parse()
+    # Start CVRFDoc changes
+    args = parser.parse_args()
+    cvrfdoc = CVRFDocument.from_xml(args.file)
+    print(cvrfdoc)
+    print("\n\n\n")
+    print(type(cvrfdoc.ProductTree))
+    print(cvrfdoc.ProductTree)
+    # print(json.dumps(cvrfdoc.ProductTree, indent=4))
+    from .cvrfdocument import ProductTree
+    print(isinstance(cvrfdoc.ProductTree, ProductTree))
+
+    # print(cvrfdoc.ProductTree.products())
+    for p in cvrfdoc.ProductTree.products():
+        print(p)
+    # print(cvrfdoc.ProductTree.keys())
+    # print(cvrfdoc.keys())
+    # cvrfdoc.pop('ProductTree')
+    # print(cvrfdoc.keys())
+
+    # print(cvrfdoc.ProductTree)
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    #cvrf_parser = CVRFParser(parser, progname=progname)
+    #cvrf_parser.parse()
