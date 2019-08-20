@@ -22,23 +22,22 @@ class CVRFDocument(AttributeDict):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Capture and wrap ProductTree
         self.ProductTree = ProductTree(self.pop('ProductTree'))
-        print(type(self.ProductTree))
-        print(type(self.ProductTree.__dict__))
-        print(self.ProductTree)
+
+        # Pre-process Vulnerabilities
+        self.Vulnerabilities = []
+        for v in self.pop('Vulnerability'):
+            self.Vulnerabilities.append(Vulnerability(v))
+
+        print("Notes: ", self.DocumentNotes)
 
     def __str__(self):
         return "{} {}: {}".format(self.DocumentType, self.DocumentTracking.Identification.ID, self.DocumentTitle)
 
-    # def products(self):
-    #     if self.ProductTree is not None:
-    #         pass
-    #     else:
-    #         return None # Product object from self node?
-    #     return self.ProductTree.Branch
-
     @classmethod
-    def from_xml(cls, xml, lazy=True):
+    def from_xml(cls, xml: str, lazy: bool = True):
         """
         Create a CVRFDocument from an existing XML file.
         :param xml: A file object from which to read the XML representation.
@@ -46,10 +45,8 @@ class CVRFDocument(AttributeDict):
         :return: A new CVRFDocument based on the given file.
         """
         # TODO: Might need streaming option for huge files
-        # new_doc = cls()
-        # new_doc.root = xmltodict.parse(xml)
+
         with open(xml, 'rb') as f:
-            # new_doc.root = AttrDict(xmltodict.parse(f, dict_constructor=dict, encoding='utf-8'))
             new_doc = cls(xmltodict.parse(f, dict_constructor=dict, encoding='utf-8')['cvrfdoc'])
 
         if not lazy:
@@ -67,7 +64,7 @@ class CVRFDocument(AttributeDict):
         #     pass
 
 
-class ProductTree():  # AttributeDict
+class ProductTree:  # AttributeDict
     """
     Branch * (recursive)
     Full Product Name *
@@ -84,24 +81,25 @@ class ProductTree():  # AttributeDict
         else:
             return ''
 
-    def products(self):
-        # print(self.branches())
+    def products(self) -> list:
+        # ProductTrees can have recursive branches, so I might be a branch or a leaf
         if hasattr(self.tree, 'Branch') and self.tree.Branch is not None:
+            # Get all my child products
             branch_products = []
             for b in self.tree.Branch.Branch:
-                # print("Branch: ", b)
                 branch_products.extend(ProductTree(b).products())
             return branch_products
 
         else:
+            # I have no children, so return myself as a list of a single Product
             return [Product(self.tree.FullProductName['@ProductID'],
                             self.tree.FullProductName['#text'],
                             self.tree.FullProductName.get('CPE', None))]
 
 
 class Product:
-    def __init__(self, id, name, cpe=None):
-        self.ProductID = id
+    def __init__(self, pid, name, cpe=None):
+        self.ProductID = pid
         self.FullProductName = name
         self.CPE = cpe
 
@@ -109,7 +107,7 @@ class Product:
         return "({}) {}".format(self.ProductID, self.FullProductName)
 
 
-class Vulnerability:
+class Vulnerability(AttributeDict):
     """
     Ordinal
     Title
@@ -127,4 +125,41 @@ class Vulnerability:
     References *
     Acknowledgements *
     """
-    pass
+
+    # def __init__(self, *args, **kwargs):
+    #     if '@Ordinal' in kwargs:
+    #         self.Ordinal = kwargs.pop('@Ordinal')
+    #     super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        title = " {}".format(self.Title or ' Untitled')
+        cve = " ({})".format(self.CVE or ' No CVE')
+        return "{}:{}{}".format(self['@Ordinal'], cve, title)
+
+    def threats(self) -> list:
+        if hasattr(self, 'Threats'):
+            threat_subkey = self.Threats.pop('Threat')
+            threat_list = []
+
+            if isinstance(threat_subkey, list):
+                # Multiple threats in this vuln -- add them all
+                for t in threat_subkey:
+                    threat_list.append(Threat(**t))
+            elif threat_subkey is not None:
+                # Only one threat -- add it directly
+                threat_list.append(Threat(**threat_subkey))
+            return threat_list
+        else:
+            return None
+
+
+class Threat(AttributeDict):
+    def __init__(self, *args, **kwargs):
+        if '@Type' in kwargs:
+            self.threat_type = kwargs.pop('@Type')
+        if 'Description' in kwargs:
+            self.Description = kwargs.pop('Description')
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return "({}) {}".format(self.threat_type, self.Description)

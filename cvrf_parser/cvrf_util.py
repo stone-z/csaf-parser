@@ -859,22 +859,24 @@ def main(progname=None):
     args = parser.parse_args()
     cvrfdoc = CVRFDocument.from_xml(args.file)
     print(cvrfdoc)
+    print(cvrfdoc.keys())
     print("\n\n\n")
-    print(type(cvrfdoc.ProductTree))
-    print(cvrfdoc.ProductTree)
-    # print(json.dumps(cvrfdoc.ProductTree, indent=4))
-    from .cvrfdocument import ProductTree
-    print(isinstance(cvrfdoc.ProductTree, ProductTree))
 
-    # print(cvrfdoc.ProductTree.products())
+    print("Products:")
     for p in cvrfdoc.ProductTree.products():
         print(p)
-    # print(cvrfdoc.ProductTree.keys())
-    # print(cvrfdoc.keys())
-    # cvrfdoc.pop('ProductTree')
-    # print(cvrfdoc.keys())
 
-    # print(cvrfdoc.ProductTree)
+    print("Vulnerabilities:")
+    for v in cvrfdoc.Vulnerabilities:
+        print(v)
+        # print(v.CVSSScoreSets.ScoreSet.BaseScore)
+        print("Threats:")
+        for t in v.threats():
+            print(t)
+
+    print("Notes")
+    for n in cvrfdoc.DocumentNotes:
+        print(json.dumps(n))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
