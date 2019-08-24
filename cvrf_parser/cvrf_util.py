@@ -862,17 +862,22 @@ def main(progname=None):
     print(cvrfdoc.keys())
     print("\n\n\n")
 
+    print("Branches:")
+    # print(cvrfdoc.ProductTree.branches())
+    for b in cvrfdoc.ProductTree.branches():
+        pass # print(b)
+
     print("Products:")
     for p in cvrfdoc.ProductTree.products():
         print(p)
 
-    print("Vulnerabilities:")
-    for v in cvrfdoc.Vulnerabilities:
-        print(v)
-        # print(v.CVSSScoreSets.ScoreSet.BaseScore)
-        print("Threats:")
-        for t in v.threats():
-            print(t)
+    # print("Vulnerabilities:")
+    # for v in cvrfdoc.Vulnerabilities:
+    #     print(v)
+    #     # print(v.CVSSScoreSets.ScoreSet.BaseScore)
+    #     print("Threats:")
+    #     for t in v.threats():
+    #         print(t)
 
     print("Notes")
     for n in cvrfdoc.DocumentNotes:
